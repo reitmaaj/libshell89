@@ -1,0 +1,16 @@
+#!/bin/sh -eu
+set -eu
+# gen_compile_db <compiler> <outfile>
+cc="$1"
+out="$2"
+root="$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)"
+mkdir -p "$(dirname "$out")"
+printf '[\n' > "$out"
+sep=""
+for f in "$root"/src/*.c; do
+    [ -e "$f" ] || continue
+    printf '%s  {\n    "directory": "%s",\n    "command": "%s -std=c89 -D_POSIX_C_SOURCE=200809L -pthread -I%s/include -I%s/src -I%s/../libstring89/include -I%s/../libunicode89/include -c -o /dev/null %s",\n    "file": "%s"\n  }\n' \
+        "$sep" "$root" "$cc" "$root" "$root" "$root" "$root" "$f" "$f" >> "$out"
+    sep=","
+done
+printf ']\n' >> "$out"
