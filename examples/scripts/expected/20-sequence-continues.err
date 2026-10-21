@@ -1,0 +1,1 @@
+shell89: files read: fixtures/missing.txt (error 2)

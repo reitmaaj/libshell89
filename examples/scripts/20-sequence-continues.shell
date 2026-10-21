@@ -1,0 +1,2 @@
+files read --path="fixtures/missing.txt";
+text echo --text="continued"

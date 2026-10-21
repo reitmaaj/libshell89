@@ -1,0 +1,2 @@
+files read --path="fixtures/hello.txt" | files write --path="copy.txt";
+files read --path="copy.txt" | text upper

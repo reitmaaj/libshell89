@@ -23,8 +23,11 @@ The public header has no dependency on either library.
 
 ```sh
 just build          # library archive
+just tool           # build/shell89 demonstration CLI
+just cli            # CLI unit and end-to-end checks
+just example-scripts # run the twenty example scripts
 just test           # smoke, unit, integration, fault, property, stress
-just check          # build, lint, tests, examples, header probes
+just check          # build, lint, tests, examples, header probes, CLI, scripts
 just release        # check + matrix + ASan/UBSan + TSan + Valgrind + fuzz + ILP32
 just build32        # best-effort ILP32 build (skips without multilib)
 just test32         # ILP32 smoke and unit tests when available
@@ -83,7 +86,43 @@ state changes remain visible. Callbacks must synchronize their own shared
 state. Process commands receive only explicitly registered options and a
 configured environment.
 
-See `examples/embed.c` and `examples/cli.c`.
+See `examples/embed.c` and `tool/shell89.c`.
+
+## CLI
+
+`build/shell89` is a small demonstration runner. It embeds the library and
+registers native demo commands only; it never performs implicit `PATH` lookup.
+
+```sh
+just tool
+./build/shell89 -c 'text echo --text="abc" | text upper'
+./build/shell89 script.shell
+printf 'text count --lines' | ./build/shell89
+printf 'text count --lines' | ./build/shell89 -
+```
+
+| command | options |
+| --- | --- |
+| `text echo` | `--text` string, required |
+| `text upper` | none |
+| `text lower` | none |
+| `text count` | `--lines` flag |
+| `text grep` | `--pattern` string required, `--ignore-case` flag |
+| `text head` | `--lines` string required |
+| `text skip` | `--lines` string required |
+| `files read` | `--path` string, required |
+| `files write` | `--path` string required, `--append` flag |
+
+`text grep` is a literal line filter, not a regular expression. `text head` and
+`text skip` accept lines up to 64 KiB. `text grep` exits 0 when it matches and 1
+when it does not. See `examples/scripts/README.md` for twenty runnable scripts
+and their expected behavior.
+
+A script supplied on stdin, explicitly as `-` or by default, consumes stdin as
+source, so its first stage receives empty input. A script from `-c` or a file
+leaves stdin available to the first stage. Diagnostics go to stderr; the exit
+status is the last shell pipeline's status, or 1 for a CLI runtime failure and 2
+for a usage error, an oversized script, or a NUL-containing script.
 
 ## Language
 
@@ -131,9 +170,10 @@ termination kinds, and native signal numbers.
 
 - Normative specification: `spec/shell89-spec.md`
 - Project design/testing notes: `.agent/`
-- Unit tests: parser, registry, streams
+- Unit tests: parser, registry, streams, CLI helpers, line commands
 - Integration tests: native/process equivalence, all mixed pipeline
-  combinations, sequences, embedding isolation
+  combinations, sequences, embedding isolation, CLI behavior, twenty example
+  scripts with expected outputs and created-file checks
 - Fault injection: allocation, descriptor, spawn, thread, wait, read, write
 - Property tests: parse/format round-trip, byte identity, preflight atomicity
 - Stress: 64 MiB streams, 16-stage pipelines, 64-pipeline scripts, 10,000 runs,

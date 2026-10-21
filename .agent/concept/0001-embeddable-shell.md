@@ -11,3 +11,8 @@ Unix-style stream behavior.
 
 There is no command discovery, expansion, persistent state, or policy. The host
 decides which commands exist and what they may do.
+
+A standalone `tool/` runner registers a small fixed vocabulary for demonstration
+and evaluation. It is not part of the library archive and offers no external
+command registration or implicit `PATH` lookup. `examples/scripts/` exercises
+that vocabulary with checked fixtures, statuses, and outputs.

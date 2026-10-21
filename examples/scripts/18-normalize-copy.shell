@@ -1,0 +1,1 @@
+files read --path="fixtures/mixed-case.txt" | text lower | files write --path="normalized.txt"

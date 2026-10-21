@@ -41,7 +41,7 @@ clean:
 	rm -rf build
 
 format:
-	clang-format -i src/*.c src/*.h include/*.h tests/support/*.c tests/support/*.h tests/unit/*.c tests/integration/*.c tests/fault/*.c tests/property/*.c tests/stress/*.c tests/fixtures/*.c examples/*.c
+	clang-format -i src/*.c src/*.h include/*.h tests/support/*.c tests/support/*.h tests/unit/*.c tests/integration/*.c tests/fault/*.c tests/property/*.c tests/stress/*.c tests/fixtures/*.c tests/cli/*.c examples/*.c tool/*.c tool/*.h
 
 lint:
 	@for f in scripts/*; do \
@@ -50,7 +50,7 @@ lint:
 	    shellcheck -s sh "$f" || exit 1; \
 	    shellcheck -s bash "$f" || exit 1; \
 	done
-	@for f in src/*.c src/*.h include/*.h tests/support/*.c tests/support/*.h tests/unit/*.c tests/integration/*.c tests/fault/*.c tests/property/*.c tests/stress/*.c tests/fixtures/*.c examples/*.c; do \
+	@for f in src/*.c src/*.h include/*.h tests/support/*.c tests/support/*.h tests/unit/*.c tests/integration/*.c tests/fault/*.c tests/property/*.c tests/stress/*.c tests/fixtures/*.c tests/cli/*.c examples/*.c tool/*.c tool/*.h; do \
 	    [ -e "$f" ] || continue; \
 	    clang-format --dry-run --Werror "$f" || { echo "needs formatting: $f"; exit 1; }; \
 	done
@@ -69,6 +69,32 @@ examples: build
 	done
 	./build/embed
 
+tool: build
+	@mkdir -p build
+	{{CC}} {{STRICT}} {{POSIX}} {{PTHREAD}} -Iinclude -Itool \
+	    -o build/shell89 tool/shell89.c tool/shell89_cli.c \
+	    tool/shell89_lines.c build/libshell89.a {{STRING89LIB}} \
+	    {{UNICODE89LIB}}
+
+cli: tool
+	@mkdir -p build
+	{{CC}} {{STRICT}} {{POSIX}} {{PTHREAD}} {{TESTFLAGS}} -Iinclude -Itool \
+	    -Itests/support -o build/test_cli tests/cli/test_cli.c \
+	    tool/shell89_cli.c tool/shell89_lines.c \
+	    tests/support/shell89_test.c build/libshell89.a {{STRING89LIB}} \
+	    {{UNICODE89LIB}}
+	./build/test_cli
+	{{CC}} {{STRICT}} {{POSIX}} {{PTHREAD}} {{TESTFLAGS}} -Iinclude -Itool \
+	    -Itests/support -o build/test_lines tests/cli/test_lines.c \
+	    tool/shell89_cli.c tool/shell89_lines.c \
+	    tests/support/shell89_test.c tests/support/shell89_capture.c \
+	    build/libshell89.a {{STRING89LIB}} {{UNICODE89LIB}}
+	./build/test_lines
+	sh scripts/cli-check.sh ./build/shell89 build/libshell89.a
+
+example-scripts: tool
+	sh scripts/example-scripts-check.sh ./build/shell89 examples/scripts
+
 header:
 	@mkdir -p build
 	@printf '#include <shell89.h>\nint main(void){return 0;}\n' > build/header.c
@@ -81,7 +107,7 @@ cpp-check:
 	{{CXX}} -std=c++23 -pedantic-errors -Wall -Wextra -Werror -Iinclude \
 	    -c build/header.cpp -o build/header-cpp.o
 
-check: build lint test examples header cpp-check
+check: build lint test examples header cpp-check cli example-scripts
 release: check matrix sanitize tsan valgrind fuzz test32
 
 fixture: build

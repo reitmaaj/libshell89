@@ -1,0 +1,2 @@
+files read --path="fixtures/a.txt" | files write --path="joined.txt";
+files read --path="fixtures/b.txt" | files write --path="joined.txt" --append

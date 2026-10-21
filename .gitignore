@@ -32,6 +32,12 @@
 
 !examples/
 !examples/*.c
+!examples/scripts/
+!examples/scripts/**
+
+!tool/
+!tool/*.c
+!tool/*.h
 
 !scripts/
 !scripts/*

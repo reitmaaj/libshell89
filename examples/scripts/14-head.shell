@@ -1,0 +1,1 @@
+files read --path="fixtures/multiline.txt" | text head --lines="2"

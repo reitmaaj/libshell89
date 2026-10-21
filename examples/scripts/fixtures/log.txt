@@ -1,0 +1,5 @@
+INFO starting
+ERROR disk full
+WARN low memory
+error retrying
+ERROR disk full again
